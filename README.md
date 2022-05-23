@@ -7,7 +7,7 @@ Requires
 - Pytorch (1.8+)
 - Python (3.7+)
 - Matplotlib
-
+- Scipy
 
 
 Main file to run: 
