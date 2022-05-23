@@ -14,7 +14,7 @@ from torch.optim.lr_scheduler import StepLR
 from change_det_methods import Change_detect
 import random
 from utils import ChangePointF1Score
-
+from post_process_filt.filtering_code import filter_and_get_peaks
 import torch
 
 print(torch.__version__)
@@ -112,7 +112,7 @@ seg_length = cp_data.win_length / 2
 cuda = 1
 batch_size = 64
 
-sk_dist = SinkhornDistance(eps=0.1, max_iter=200)
+sk_dist = SinkhornDistance(eps= 0.1, max_iter=200)
 sk_dist_py = SinkhornDistance_Pytorch(eps=0.1,max_iter=200)
 # defining the model
 
@@ -131,7 +131,7 @@ scheduler = StepLR(optimizer_metric, step_size=1000, gamma=1)
 
 
 
-def train_metric(pair_batch,reg=0.1):
+def train_metric(pair_batch,reg=0.5):
     '''Function for training metric through CPs
      pair_batch: triplet batches, reg: regularization parametr for l1 norm'''
 
@@ -163,7 +163,7 @@ def train_metric(pair_batch,reg=0.1):
         loss_trip = trplet_loss(X_anc_o, X_sim_o, X_dissim_o)
 
         #norm for regularization (can be a mixed norm)
-        loss_regu = torch.norm(torch.norm(sk_lin_model.linear_layer.weight, p=1, dim=1), p=2, dim=0)
+        loss_regu = torch.norm(torch.norm(sk_lin_model.linear_layer.weight, p=1, dim=1), p=1, dim=0)
 
 
         loss = loss_trip + reg * loss_regu
@@ -177,7 +177,7 @@ def train_metric(pair_batch,reg=0.1):
 
 
 
-def val_metric(pair_batch,reg=0.1):
+def val_metric(pair_batch,reg=0.5):
     '''Function for validating learned metric through CPs
      pair_batch: triplet batches, reg: regularization parametr for l1 norm'''
     loss_list = []
@@ -203,7 +203,7 @@ def val_metric(pair_batch,reg=0.1):
 
 
         loss_trip = trplet_loss(X_anc_o, X_sim_o, X_dissim_o)
-        loss_regu = torch.norm(torch.norm(sk_lin_model.linear_layer.weight, p=1, dim=1), p=2, dim=0)
+        loss_regu = torch.norm(torch.norm(sk_lin_model.linear_layer.weight, p=1, dim=1), p=1, dim=0)
         loss = loss_trip + reg * loss_regu
         loss_list.append(loss.item())
 
@@ -297,8 +297,11 @@ if __name__ == "__main__":
             y = cp_labels[0: - (len(cp_labels) - len(change_metric))]
 
             fpr, tpr, thresholds = metrics.roc_curve(y, change_metric)
+            #get filtered sinkidv statistic and peaks
+            filter_sinkdiv, peaks_sinkdiv = filter_and_get_peaks(change_metric, filter_wind=50, peak_thresh=2)
             auc_sinkdiv = metrics.auc(fpr, tpr)
             auc_list_bline.append(auc_sinkdiv)
+            #get f1 score sinkdiv
             f1_sinnkdiv = ChangePointF1Score(y,15,fpr,tpr,thresholds,change_metric)
 
             y = cp_labels[0: - (len(cp_labels) - len(change_metric_enc))]
@@ -308,8 +311,11 @@ if __name__ == "__main__":
             # fpr, tpr, thresholds = metrics.roc_curve(y, d)
             auc_sinkdiv_lm = metrics.auc(fpr, tpr)
             auc_list_enc.append(auc_sinkdiv_lm)
+            #get f1 score_enc
             f1_enc = ChangePointF1Score(y,15,fpr,tpr,thresholds,change_metric_enc)
             visualize = 1
+            #get filters and peaks
+            filter_sinkdivLm, peaks_sinkdivLM = filter_and_get_peaks(change_metric_enc, filter_wind=50, peak_thresh=2)
             if visualize == 1:
                 f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
                 # ax1.plot(X[:,:],label = 'Input sequence')
