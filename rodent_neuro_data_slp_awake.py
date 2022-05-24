@@ -340,6 +340,5 @@ if __name__ == "__main__":
                 plt.show()
         print("done")
 
-      np.round(np.mean(auc_list_enc), decimals=4)
-      np.round(np.mean(auc_list_bline), decimals=4)
-      print('done')
+        np.round(np.mean(auc_list_enc), decimals=4)
+        np.round(np.mean(auc_list_bline), decimals=4)
