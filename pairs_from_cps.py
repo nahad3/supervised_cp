@@ -20,7 +20,7 @@ class LoadDataSet():
         self.no_features = self.signal.shape[1]
         'scaling each axis between 0 and 1'
         min_max_scaler = preprocessing.MinMaxScaler()
-        #self.signal = min_max_scaler.fit_transform(self.signal)
+        self.signal = min_max_scaler.fit_transform(self.signal)
         self.sup_cp_indices = np.array(self.mat_file['L']).reshape(-1,)
 
 
@@ -54,12 +54,21 @@ class LoadDataSet():
         '''window block: A big window size before and after the cp from where smaller segments of sim
         dissim pairs are extracted. (should be large enough to get 2 pairs)
         pair_length: length of smaller segments extracted from larger window black
-        buff: buffer region before and after a change point that is skipped before getting X_p and X_f (past and future windows from CPs
+
         '''
 
         signal = self.signal
         cp_indices = self.sup_cp_indices.tolist()
 
+        # seg_size has to be even
+
+        'window block determined from consecutive cps but could be changed later'
+
+        sig_dim = signal.shape[-1]
+        X1 = np.array([])
+        X2 = np.array([])
+
+        #self.win_length = 60
         if self.win_length == None:
             window_block = np.diff(self.sup_cp_indices)
             window_block = np.min(window_block)
@@ -74,16 +83,20 @@ class LoadDataSet():
 
         if window_block % 2 != 0:
             window_block =  window_block -1
+        #seg_size = seg_size if seg_size % 2 == 0 else seg_size - 1
 
+
+
+
+        #if signal.shape[0] - cp_indices[-1] - buff < 2 * seg_size: cp_indices = cp_indices[:-1]
 
 
 
         cp_pairs_list = []
 
         for cp in cp_indices:  ## For non yahoos cp_indices[:-2]:
-            'goint through all change points and extract X_p and X_f (past and future sliding windows)'
+
             'Checking if sufficient length available for last cp to get segment after cp'
-            'buffer is buffer space after and before change point to X_p and X_f'
             X_p = signal[cp  - self.seg_length - buff : cp - buff , :]
             X_f = signal[ cp + buff : cp  +    self.seg_length + buff , :]
             if len(X_p) == len(X_f):
@@ -93,7 +106,6 @@ class LoadDataSet():
 
                 else:
                     cp_pairs_list.append(cp_pairs)
-
 
                 aug = 1
                 if aug == 1:
@@ -124,7 +136,7 @@ class LoadDataSet():
         return cp_pairs_list
 
     def get_pairs(self,X_p,X_f, no_of_pairs =2):
-        'Takes set of X_p and X_f (past and future windows, and obtains subsequences from these'
+
         X1_s = np.array([])
         X2_s = np.array([])
 

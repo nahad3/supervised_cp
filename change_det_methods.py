@@ -39,22 +39,19 @@ class Change_detect():
             self.model.eval()
             change_stat = np.zeros(X1.shape[0]-1)
             btch_size = 90
-            t_1_1 = time.time()
             for i in range(0,len(X1) -btch_size,btch_size):
                 torch.cuda.empty_cache()
                 X1_s = X1[i:i + btch_size,:,:]
                 X2_s = X2[i: i +btch_size,:,:]
-                t1 = time.time()
                 X1_enc = self.model(X1_s.cuda().detach().float())
                 X2_enc = self.model(X2_s.cuda().detach().float())
                 change_stat[i:i+btch_size] = self.change_stat(X1_enc,X2_enc).detach().cpu().numpy() -0.5*(self.change_stat(X2_enc,X2_enc).detach().cpu().numpy() + self.change_stat(X1_enc,X1_enc).detach().cpu().numpy())
-                t2 = time.time()
                 #change_stat[i:i + btch_size] = self.change_stat(torch.from_numpy(X1_s).cuda().float(), torch.from_numpy(X2_s).cuda().float()).detach().cpu().numpy()
                 X1_enc = 0
                 X2_enc =0
                 torch.cuda.empty_cache()
                 print(i)
-            t_1_2 = time.time()
+
             change_stat = np.roll(change_stat, self.win_length)
             return change_stat
 
@@ -84,7 +81,6 @@ class Change_detect():
 
             change_stat = np.zeros(X1.shape[0] - 1)
             btch_size = 90
-            t_1_1 = time.time()
             for i in range(0, len(X1) - btch_size, btch_size):
                 print (i)
                 torch.cuda.empty_cache()
@@ -92,7 +88,6 @@ class Change_detect():
                 X2_s = X2[i: i + btch_size, :, :].unsqueeze(-1).cuda().double().squeeze(-1)
                 change_stat[i:i + btch_size] = self.change_stat(X1_s, X2_s).detach().cpu().numpy() - 0.5*(self.change_stat(X1_s, X1_s).detach().cpu().numpy() + self.change_stat(X2_s, X2_s).detach().cpu().numpy())
                 torch.cuda.empty_cache()
-            t_1_2 = time.time()
             change_stat = np.roll(change_stat,self.win_length)
             return change_stat
 
