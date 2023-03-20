@@ -12,4 +12,4 @@ Requires
 
 Main file to run: 
 
-Roden_neural_data
+main_run.py
